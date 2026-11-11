@@ -1,11 +1,11 @@
-import asyncio
 import requests
 from api.auth_module import Authenticator
-from getrollcall import wait_for_rollcall
+from api.getrollcall import wait_for_rollcall
 from sendRadar import answer_rollcall_Radar
-from sendNum import answer_rollcall_number_async
+from sendNum import answer_rollcall_number
+from sendQRcode import answer_rollcall_qr_code
 
-async def main():
+def main():
     print("🔐 Logging in...")
     auth = Authenticator()
     session = auth.perform_auth()
@@ -25,16 +25,26 @@ async def main():
         'priority': 'u=1, i'
     })
 
-    rollcall_id, source = wait_for_rollcall(session)
-    print(f"Returned: rollcall_id={rollcall_id}, source={source}")
+    rollcall = wait_for_rollcall(session)
+    if (rollcall==None):
+        return
+    
+    rollcall_id = rollcall['rollcall_id']
+    source = rollcall['source']
+    course_id = rollcall['course_id']
+
+    print(f"Returned: rollcall_id={rollcall_id}, source={source}, course_id={course_id}")
 
     if source == "number":
-        data = await answer_rollcall_number_async(session, rollcall_id)
+        data = answer_rollcall_number(session, rollcall_id)
         print(data)
 
     elif source == "radar":
         print(answer_rollcall_Radar(session, rollcall_id).text)
 
+    elif source == "qrcode":
+        print(answer_rollcall_qr_code(session, rollcall_id, course_id)) # Still testing, not sure if it works
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
 
