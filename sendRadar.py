@@ -1,6 +1,12 @@
 import json
+try:
+    from api.utils import generate_device_id
+except ImportError:
+    import secrets
+    def generate_device_id() -> str:
+        return secrets.token_hex(8)
 
-def answer_rollcall_Radar(session, rollcall_id):
+def answer_rollcall_Radar(session, rollcall_id, device_id=None):
     url = f"https://iclass.tku.edu.tw/api/rollcall/{rollcall_id}/answer?api_version=1.1.2"
 
     headers = {
@@ -21,8 +27,11 @@ def answer_rollcall_Radar(session, rollcall_id):
         "referer": "http://localhost/"
     }
 
+    if not device_id:
+        device_id = generate_device_id()
+
     payload = {
-        "deviceId": "7eba2081f77e5525", #7eba2081f77e5527
+        "deviceId": device_id,
         "latitude": 25.174269373936202,
         "longitude": 121.45422774303604,
         "speed": None,
@@ -32,5 +41,6 @@ def answer_rollcall_Radar(session, rollcall_id):
         "heading": None
     }
 
+    print(f"Attempted to answer radar rollcall {rollcall_id} with deviceId: {device_id}")
     response = session.put(url, headers=headers, data=json.dumps(payload))
     return response

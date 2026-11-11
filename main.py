@@ -5,10 +5,16 @@ from sendRadar import answer_rollcall_Radar
 from sendNum import answer_rollcall_number
 from sendQRcode import answer_rollcall_qr_code
 
-def main():
+def main(stop_event=None):
+    if stop_event and stop_event.is_set():
+        return {"cancelled": True}
+
     print("🔐 Logging in...")
     auth = Authenticator()
     session = auth.perform_auth()
+
+    if stop_event and stop_event.is_set():
+        return {"cancelled": True}
 
     session.headers.update({
         'sec-ch-ua-platform': '"Android"',
@@ -25,9 +31,12 @@ def main():
         'priority': 'u=1, i'
     })
 
-    rollcall = wait_for_rollcall(session)
+    rollcall = wait_for_rollcall(session, stop_event=stop_event)
+    if stop_event and stop_event.is_set():
+        return {"cancelled": True}
+
     if (rollcall==None):
-        return
+        return None
     
     rollcall_id = rollcall['rollcall_id']
     source = rollcall['source']
@@ -38,12 +47,19 @@ def main():
     if source == "number":
         data = answer_rollcall_number(session, rollcall_id)
         print(data)
+        return {"success": True, "source": source, "rollcall_id": rollcall_id, "data": data}
 
     elif source == "radar":
-        print(answer_rollcall_Radar(session, rollcall_id).text)
+        resp = answer_rollcall_Radar(session, rollcall_id)
+        print(resp.text)
+        return {"success": True, "source": source, "rollcall_id": rollcall_id, "data": resp.text}
 
     elif source == "qrcode":
-        print(answer_rollcall_qr_code(session, rollcall_id, course_id)) # Still testing, not sure if it works
+        resp = answer_rollcall_qr_code(session, rollcall_id, course_id) # Still testing, not sure if it works
+        print(resp)
+        return {"success": True, "source": source, "rollcall_id": rollcall_id, "data": str(resp)}
+
+    return {"success": False, "source": source, "rollcall_id": rollcall_id, "error": f"Unknown source: {source}"}
 
 if __name__ == "__main__":
     main()

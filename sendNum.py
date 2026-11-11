@@ -1,10 +1,13 @@
-import ssl
-import aiohttp
-import asyncio
 import json
+try:
+    from api.utils import generate_device_id
+except ImportError:
+    import secrets
+    def generate_device_id() -> str:
+        return secrets.token_hex(8)
 
     
-def answer_rollcall_number(session, rollcall_id):
+def answer_rollcall_number(session, rollcall_id, device_id=None):
     url = f"https://iclass.tku.edu.tw/api/rollcall/{rollcall_id}/answer_number_rollcall"
 
     headers = {
@@ -26,11 +29,14 @@ def answer_rollcall_number(session, rollcall_id):
         "priority": "u=1, i"
     }
     
+    if not device_id:
+        device_id = generate_device_id()
+
     data = {
-            "deviceId": "7eba2081f77e5527",
+            "deviceId": device_id,
             "numberCode": getNumber(session, rollcall_id)
     }
-    print(f"Attempted to answer rollcall {rollcall_id} with number code {data['numberCode']}")
+    print(f"Attempted to answer rollcall {rollcall_id} with number code {data['numberCode']} (deviceId: {device_id})")
     session.put(url, headers=headers, data=json.dumps(data))
 
     if data['numberCode'] is None:

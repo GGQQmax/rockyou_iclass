@@ -1,0 +1,10 @@
+services:
+  discord-bot:
+    build: .
+    container_name: rockyou_iclass_bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=Asia/Taipei
